@@ -10,5 +10,3 @@ zie later meer
 
 
 
-bam
-
