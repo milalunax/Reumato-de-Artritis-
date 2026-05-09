@@ -1,12 +1,36 @@
 # Reumato-de-Artritis-
 
-zie later meer
+### **Inhoud/Structuur**
+
+**-**
+
+**-**
+
+**-**
 
 
 
+### **Introductie**
+
+**……………**
 
 
 
+### **Methoden**
+
+**……………**
 
 
+
+### **Resultaten**
+
+**……………**
+
+
+
+### **Conclusie**
+
+**test**
+
+……………
 
