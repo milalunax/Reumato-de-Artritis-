@@ -1,4 +1,4 @@
-#Deel1
+#Indexeren
 setwd("C:/Users/mtous/OneDrive - NHL Stenden/transcriptomics/casus")
 getwd()
 install.packages('BiocManager')
@@ -9,6 +9,8 @@ buildindex(
   reference = 'GCF_000001405.40_GRCh38.p14_genomic.fna',
   memory = 4000,
   indexSplit = TRUE)
+
+#Mapping
 align.Nor1 <- align(index = "ref_humaan", readfile1 = "SRR4785819_1_subset40k.fastq", readfile2="SRR4785819_2_subset40k.fastq", output_file = "Nor1.BAM")
 align.Nor2 <- align(index = "ref_humaan", readfile1 = "SRR4785820_1_subset40k.fastq", readfile2="SRR4785820_2_subset40k.fastq", output_file = "Nor2.BAM")
 align.Nor3 <- align(index = "ref_humaan", readfile1 = "SRR4785828_1_subset40k.fastq", readfile2="SRR4785828_2_subset40k.fastq", output_file = "Nor3.BAM")
@@ -17,8 +19,6 @@ align.RA1 <- align(index = "ref_humaan", readfile1 = "SRR4785979_1_subset40k.fas
 align.RA2 <- align(index = "ref_humaan", readfile1 = "SRR4785980_1_subset40k.fastq", readfile2="SRR4785980_2_subset40k.fastq", output_file = "RA2.BAM")
 align.RA3 <- align(index = "ref_humaan", readfile1 = "SRR4785986_1_subset40k.fastq", readfile2="SRR4785986_2_subset40k.fastq", output_file = "RA3.BAM")
 align.RA4 <- align(index = "ref_humaan", readfile1 = "SRR4785988_1_subset40k.fastq", readfile2="SRR4785988_2_subset40k.fastq", output_file = "RA4.BAM")
-
-library(Rsamtools)
 
 
 #Deel 2
@@ -141,20 +141,22 @@ library(geneLenDataBase)
 BiocManager::install("org.Hs.eg.db")
 library(org.Hs.eg.db)
 library(dplyr)
+library("magrittr")
+
 ALL= rownames(resultaten)
 res <- as.data.frame(resultaten)
 DEG= res%>%
-  filter(padj<0.05)
+  filter(padj<0.05, log2FoldChange<+-1 | log2FoldChange>=1)
+
 DEG=rownames(DEG)
-
-
+DEG
+res
 class(DEG)
 gene.vector=as.integer(ALL%in%DEG)
 names(gene.vector)=ALL 
 
 head(gene.vector)
 tail(gene.vector)
-
 
 pwf=nullp(gene.vector,"hg19","geneSymbol")
 GO.wall=goseq(pwf,"hg19","geneSymbol")
@@ -171,15 +173,39 @@ length(enriched.GO)
 
 library(dplyr)
 
+library(dplyr)
+library(ggplot2)
+
 top10 <- GO.wall %>%
   arrange(over_represented_pvalue) %>%   # kleinste p‑waarde = meest significant
   slice(1:10)
 library(ggplot2)
 
-ggplot(top10, aes(x = reorder(category, -over_represented_pvalue),
-                  y = -log10(over_represented_pvalue))) +
-  geom_col(fill = "steelblue") +
+
+GO.wall$diff <- GO.wall$numDEInCat / GO.wall$numInCat
+GO.wall$abs_diff <- GO.wall$numInCat - GO.wall$numDEInCat
+library(dplyr)
+library(ggplot2)
+
+GO.wall$ratio <- GO.wall$numDEInCat / GO.wall$numInCat
+
+top10 <- GO.wall %>%
+  arrange(over_represented_pvalue) %>%
+  slice(1:10)
+top10$negLogP=-log10(top10$over_represented_pvalue)
+
+ggplot(top10, aes(x = reorder(term, ratio), y = ratio)) +
+  geom_col(fill = "#2C7BB6") +
   coord_flip() +
+  labs(
+    title = "Top 10 GO-termen (ratio DE-genen / totaal)",
+    x = "GO-term",
+    y = "DE-genen / totaal in categorie"
+  ) +
+  theme_minimal()
+
+ggplot(top10, aes(x = numInCat/numDEInCat, fill=ontology, y = reorder(category, -numInCat/numDEInCat))) +
+  geom_bar(stat = "identity")  +
   labs(
     title = "Top 10 meest verrijkte GO‑categorieën",
     x = "GO‑categorie",
@@ -187,13 +213,12 @@ ggplot(top10, aes(x = reorder(category, -over_represented_pvalue),
   ) +
   theme_minimal()
 
-ggplot(top10, aes(x = -log10(over_represented_pvalue),
-                  y = reorder(category, over_represented_pvalue))) +
-  geom_point(size = 4, color = "darkred") +
+ggplot(top10, aes(x = (numInCat/numDEInCat), fill=Ontology, y = category)) +
+  geom_col(fill = "steelblue")  +
   labs(
-    title = "Top 10 GO‑categorieën (dotplot)",
-    x = "-log10(p‑waarde)",
-    y = "GO‑categorie"
+    title = "Top 10 meest verrijkte GO‑categorieën",
+    x = "GO‑categorie",
+    y = "-log10(p‑waarde)"
   ) +
   theme_minimal()
 
@@ -223,14 +248,15 @@ rownames(mat) <- top10$category
 pheatmap(mat, cluster_rows = FALSE, cluster_cols = FALSE,
          color = viridis::viridis(50),
          main = "Top 10 GO categorieën")
+#pathway-analyse
 res
 res[1] <- NULL
 res[2:5] <- NULL
 
-#pathview(
+pathview(
   gene.data = res,
-  pathway.id = "eco02026",  
-  species = "eco",          
-  gene.idtype = "KEGG",     
+  pathway.id = "hsa04658",  
+  species = "hsa",          
+  gene.idtype = "SYMBOL",     
   limit = list(gene = 5)    
 )
