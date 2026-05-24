@@ -21,7 +21,7 @@ align.RA3 <- align(index = "ref_humaan", readfile1 = "SRR4785986_1_subset40k.fas
 align.RA4 <- align(index = "ref_humaan", readfile1 = "SRR4785988_1_subset40k.fastq", readfile2="SRR4785988_2_subset40k.fastq", output_file = "RA4.BAM")
 
 
-#Deel 2
+#Countmatrix
 count_matrix=featureCounts(
   files = "Nor1.BAM",
       annot.ext = "genomic.gtf",
@@ -44,9 +44,9 @@ countscasus <- count_matrix$counts
 head(countscasus)
 colnames(countscasus) <- c("Normaal1", "Normaal2.BAM", "Normaal3.BAM", "Normaal4.BAM", "Reuma1.BAM", "Reuma2.BAM", "Reuma3.BAM", "Reuma4.BAM")
 head(countscasus)
-write.csv(countscasus, "RA_countmatrix.csv")
+write.csv(countscasus, "RheumatoidArthritis_countmatrix.csv")
 
-#Deel 3
+#Statistiek
 casus_table=read.table("Reumato-de-Artritis-/count_matrix_RA.txt", row.names = 1, header = TRUE)
 head(casus_table)
 
@@ -80,59 +80,60 @@ laagste_p_waarde <- resultaten[order(resultaten$padj, decreasing = FALSE), ]
 hoogste_fold_change
 laagste_fold_change
 laagste_p_waarde
-#Eerst d volcano plot doen en daarna die GO analyse, daarna pas de pathway
-EnhancedVolcano(resultaten,
-                lab = rownames(resultaten),
-                x = 'log2FoldChange',
-                y = 'pvalue',
-                title = 'Reuma vs Normaal',
-                pCutoff = 10e-32,
-                FCcutoff = 1.5,
-                pointSize = 3.0,
-                labSize = 6.0, 
-                col=c('black', 'black', 'black', 'red3'),
-                colAlpha = 1,
-                shape=c(1))
-    
-lab_italics <- paste0("italic('", rownames(resultaten), "')")
-selectLab_italics = paste0(
-  "italic('",
-  c('VCAM1','KCTD12','ADAM12', 'CXCL12','CACNB2','SPARCL1','DUSP1','SAMHD1','MAOA'),
-  "')")
+write.csv(resultaten, "DESeq2_resultaten.csv")
 
-EnhancedVolcano(resultaten,
-                lab = lab_italics,
-                x = 'log2FoldChange',
-                y = 'pvalue',
-                selectLab = selectLab_italics,
-                xlab = bquote(~Log[2]~ 'fold change'),
-                pCutoff = 10e-14,
-                FCcutoff = 1.0,
-                pointSize = 3.0,
-                labSize = 6.0,
-                labCol = 'black',
-                labFace = 'bold',
-                boxedLabels = TRUE,
-                parseLabels = TRUE,
-                col = c('black', 'pink', 'purple', 'red3'),
-                colAlpha = 4/5,
-                legendPosition = 'bottom',
-                legendLabSize = 14,
-                legendIconSize = 4.0,
-                drawConnectors = TRUE,
-                widthConnectors = 1.0,
-                colConnectors = 'black') + coord_flip()
-EnhancedVolcano(resultaten,
-                lab = rownames(resultaten),
-                x = 'log2FoldChange',
-                y = 'padj')
-dev.copy(png, 'Volcanoplotcasus6.png', 
+#Volcano plot
+library(EnhancedVolcano)
+topgenes <- head(rownames(resultaten[order(resultaten$padj, na.last = NA), ]), 10)
+
+EnhancedVolcano(
+  resultaten,
+  lab = rownames(resultaten),
+  x = 'log2FoldChange',
+  y = 'pvalue',
+  
+  title = 'Reuma vs Normaal',
+  subtitle = 'Differentiële genexpressie (DESeq2)',
+  
+  # 🌿 Calm Science kleurenmix
+  col = c(
+    'grey80',      # NS
+    '#A8DADC',     # pastel blauwgroen (alleen p)
+    '#F6BD60',     # pastel geel/oranje (alleen FC)
+    '#F28482'      # pastel zalm/rood (p + FC)
+  ),
+  
+  pCutoff = 0.05,
+  FCcutoff = 1,
+  
+  # Minder labels → veel overzichtelijker
+  selectLab = topgenes,
+  
+  pointSize = 2.5,
+  labSize = 4.5,
+  labCol = '#D62828',
+  labFace = 'bold',
+  
+  titleLabSize = 18,
+  subtitleLabSize = 14,
+  captionLabSize = 12,
+  
+  drawConnectors = TRUE,
+  widthConnectors = 0.8,
+  colConnectors = '#2A9D8F',
+  
+  xlab = "Log2 fold change",
+  ylab = "-Log10 p-value"
+)
+
+dev.copy(png, 'Volcanoplotcasus.png', 
          width = 8,
          height = 10,
          units = 'in',
          res = 500)
 dev.off()
-#GO assay
+
+#GO-analyse
 install.packages("BiocManager")
 BiocManager::install("goseq")
 library(goseq)
