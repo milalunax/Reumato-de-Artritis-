@@ -45,6 +45,7 @@ head(countscasus)
 colnames(countscasus) <- c("Normaal1", "Normaal2.BAM", "Normaal3.BAM", "Normaal4.BAM", "Reuma1.BAM", "Reuma2.BAM", "Reuma3.BAM", "Reuma4.BAM")
 head(countscasus)
 write.csv(countscasus, "RheumatoidArthritis_countmatrix.csv")
+View(read.csv("RheumatoidArthritis_subsetcountmatrix.csv"))
 
 #Statistiek
 casus_table=read.table("Reumato-de-Artritis-/count_matrix_RA.txt", row.names = 1, header = TRUE)
@@ -160,6 +161,7 @@ head(gene.vector)
 tail(gene.vector)
 
 pwf=nullp(gene.vector,"hg19","geneSymbol")
+plot(pwf)
 GO.wall=goseq(pwf,"hg19","geneSymbol")
 
 
@@ -171,6 +173,10 @@ enriched.GO=GO.wall$category[GO.wall$over_represented_pvalue<.05]
 class(enriched.GO)
 head(enriched.GO)
 length(enriched.GO)
+
+png("RheumatoidArthritis-GOseq_biasplot.png", width = 1200, height = 900, res = 150)
+plot(pwf)   # vervang dit door jouw plotcode
+dev.off()
 
 library(dplyr)
 library(ggplot2)
