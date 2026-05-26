@@ -71,7 +71,7 @@ dds_casus = DESeqDataSetFromMatrix(countData = casus_table,
                               design = ~ treatment_casus)
 dds_casus = DESeq(dds_casus)
 resultaten <- results(dds_casus)
-write.table(resultaten, file = 'Resultatencasus1.csv', row.names = TRUE, col.names = TRUE)
+write.table(resultaten, file = 'DESeq2_resultaten.csv', row.names = TRUE, col.names = TRUE)
 sum(resultaten$padj < 0.05 & resultaten$log2FoldChange > 1, na.rm = TRUE)
 sum(resultaten$padj < 0.05 & resultaten$log2FoldChange < -1, na.rm = TRUE)
 hoogste_fold_change <- resultaten[order(resultaten$log2FoldChange, decreasing = TRUE), ]
@@ -80,7 +80,7 @@ laagste_p_waarde <- resultaten[order(resultaten$padj, decreasing = FALSE), ]
 hoogste_fold_change
 laagste_fold_change
 laagste_p_waarde
-write.csv(resultaten, "DESeq2_resultaten.csv")
+resultaten
 
 #Volcano plot
 library(EnhancedVolcano)
@@ -126,7 +126,7 @@ EnhancedVolcano(
   ylab = "-Log10 p-value"
 )
 
-dev.copy(png, 'Volcanoplotcasus.png', 
+dev.copy(png, 'RheumatoidArthritisVolcanoplot.png', 
          width = 8,
          height = 10,
          units = 'in',
@@ -173,21 +173,14 @@ head(enriched.GO)
 length(enriched.GO)
 
 library(dplyr)
-
-library(dplyr)
 library(ggplot2)
 
 top10 <- GO.wall %>%
   arrange(over_represented_pvalue) %>%   # kleinste p‑waarde = meest significant
   slice(1:10)
-library(ggplot2)
-
 
 GO.wall$diff <- GO.wall$numDEInCat / GO.wall$numInCat
 GO.wall$abs_diff <- GO.wall$numInCat - GO.wall$numDEInCat
-library(dplyr)
-library(ggplot2)
-
 GO.wall$ratio <- GO.wall$numDEInCat / GO.wall$numInCat
 
 top10 <- GO.wall %>%
@@ -195,51 +188,47 @@ top10 <- GO.wall %>%
   slice(1:10)
 top10$negLogP=-log10(top10$over_represented_pvalue)
 
-ggplot(top10, aes(x = reorder(term, ratio), y = ratio)) +
-  geom_col(fill = "#2C7BB6") +
-  coord_flip() +
-  labs(
-    title = "Top 10 GO-termen (ratio DE-genen / totaal)",
-    x = "GO-term",
-    y = "DE-genen / totaal in categorie"
-  ) +
-  theme_minimal()
-
-ggplot(top10, aes(x = numInCat/numDEInCat, fill=ontology, y = reorder(category, -numInCat/numDEInCat))) +
-  geom_bar(stat = "identity")  +
-  labs(
-    title = "Top 10 meest verrijkte GO‑categorieën",
-    x = "GO‑categorie",
-    y = "-log10(p‑waarde)"
-  ) +
-  theme_minimal()
-
-ggplot(top10, aes(x = (numInCat/numDEInCat), fill=Ontology, y = category)) +
-  geom_col(fill = "steelblue")  +
-  labs(
-    title = "Top 10 meest verrijkte GO‑categorieën",
-    x = "GO‑categorie",
-    y = "-log10(p‑waarde)"
-  ) +
-  theme_minimal()
-
-top10 <- top10 %>%
-  mutate(ratio = numDEInCat / numInCat)
+top10$ratio_pct <- (top10$numDEInCat / top10$numInCat) * 100
+top10$ontology_full <- dplyr::recode(
+  top10$ontology,
+  "BP" = "Biological Process",
+  "CC" = "Cellular Component",
+  "MF" = "Molecular Function"
+)
 
 ggplot(top10, aes(
-  x = ratio,
-  y = reorder(category, ratio),
-  size = numDEInCat,
-  color = -log10(over_represented_pvalue)
+  x = ratio_pct,
+  y = reorder(term, ratio_pct),
+  fill = ontology_full
 )) +
-  geom_point() +
-  scale_color_viridis_c() +
+  geom_col() +
+  scale_x_continuous(labels = function(x) paste0(x, "%")) +
   labs(
-    title = "Top 10 GO categorieën (bubble plot)",
-    x = "DE/total ratio",
-    y = "GO categorie"
+    title = "Top 10 meest verrijkte GO-categorieën",
+    x = "Percentage DE-genen",
+    y = "Biologisch proces",
+    fill = "GO-klasse"
   ) +
-  theme_minimal()
+  theme_minimal(base_size = 14)
+ggsave("RheumatoidArthritis-GO-analyse.png", width = 8, height = 6, dpi = 300)
+
+
+
+
+top10 <- top10 %>%
+  mutate(ratio_pct = ratio * 100)
+ggplot(top10, aes(
+  x = ratio_pct,
+  y = reorder(term, ratio_pct)
+)) +
+  geom_col(fill = "#2C7BB6") +
+  labs(
+    title = "Top 10 GO-termen (% DE-genen / totaal in categorie)",
+    x = "Percentage DE-genen",
+    y = "Biologisch proces"
+  ) +
+  theme_minimal(base_size = 14)
+ggsave("RheumatoidArthritis-GO-analyse2.png", width = 8, height = 6, dpi = 300)
 
 library(pheatmap)
 
