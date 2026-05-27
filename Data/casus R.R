@@ -48,7 +48,16 @@ write.csv(countscasus, "RheumatoidArthritis_countmatrix.csv")
 View(read.csv("RheumatoidArthritis_subsetcountmatrix.csv"))
 
 #Statistiek
-casus_table=read.table("Reumato-de-Artritis-/count_matrix_RA.txt", row.names = 1, header = TRUE)
+casus_table <- read.csv("RheumatoidArthritis_countmatrix.csv",
+                        row.names = 1,
+                        sep = ",",
+                        quote = "\"",
+                        fileEncoding = "UTF-8-BOM",
+                        check.names = FALSE)
+casus_table <- data.frame(lapply(casus_table, as.numeric),
+                          row.names = rownames(casus_table))
+
+
 head(casus_table)
 
 BiocManager::install("DESeq2")
@@ -65,7 +74,7 @@ treatment_casus_table <- data.frame(treatment_casus)
 rownames(treatment_casus_table) <- c("Normaal1", "Normaal2", "Normaal3", "Normaal4", "Reuma1", "Reuma2", "Reuma3", "Reuma4")
 head(treatment_casus_table)
 colnames(casus_table)
-rownames(treatment_casus_table)
+rownames(treatment_casus_table) <- colnames(casus_table)
 colnames(casus_table) <- rownames(treatment_casus_table)
 dds_casus = DESeqDataSetFromMatrix(countData = casus_table,
                               colData = treatment_casus_table,
@@ -78,6 +87,8 @@ sum(resultaten$padj < 0.05 & resultaten$log2FoldChange < -1, na.rm = TRUE)
 hoogste_fold_change <- resultaten[order(resultaten$log2FoldChange, decreasing = TRUE), ]
 laagste_fold_change <- resultaten[order(resultaten$log2FoldChange, decreasing = FALSE), ]
 laagste_p_waarde <- resultaten[order(resultaten$padj, decreasing = FALSE), ]
+
+
 hoogste_fold_change
 laagste_fold_change
 laagste_p_waarde
