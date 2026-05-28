@@ -48,10 +48,10 @@ write.csv(countscasus, "RheumatoidArthritis_countmatrix.csv")
 View(read.csv("RheumatoidArthritis_subsetcountmatrix.csv"))
 
 #Statistiek
-  casus_table=read.table("RheumatoidArthritis_countmatrix.csv", row.names = 1, header=TRUE )
+  casus_table=read.table("count_matrix_RA.txt", row.names = 1, header=TRUE )
 head(casus_table)
 
-readLines("RheumatoidArthritis_countmatrix.csv", n=10)
+readLines("", n=10)
 
 BiocManager::install("DESeq2")
 BiocManager::install("KEGGREST")
@@ -96,8 +96,8 @@ EnhancedVolcano(
   x = 'log2FoldChange',
   y = 'pvalue',
   
-  title = 'RA samples vs Normale samples ',
-  subtitle = 'De differentiële genexpressie (DESeq2)',
+  title = 'De differentiële genexpressie (DESeq2) ',
+  subtitle = 'RA-samples vergeleken controle-samples',
   
   col = c(
     'grey80',      # NS
@@ -181,7 +181,6 @@ class(enriched.GO)
 head(enriched.GO)
 length(enriched.GO)
 
-library(dplyr)
 library(ggplot2)
 
 top10 <- GO.wall %>%
@@ -207,12 +206,12 @@ ggplot(top10, aes(
 )) +
   geom_col(fill = "#2C7BB6") +
   labs(
-    title = "Top 10 GO-termen (% DE-genen / totaal in categorie)",
+    title = "Top 10 genen van oververtegenwoordigde biologische processen",
     x = "Percentage DE-genen",
     y = "Biologisch proces"
   ) +
   theme_minimal(base_size = 14)
-ggsave("RheumatoidArthritis-GO-analyse.png", width = 8, height = 6, dpi = 300)
+ggsave("RheumatoidArthritis-GO-analyse.png", width = 15, height = 8, dpi = 300)
 
 #pathway-analyse
 res
